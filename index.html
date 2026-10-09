@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Social Gallery</title>
+<style>
+:root{--text:#262626;--muted:#737373;--line:#dbdbdb;--blue:#0095f6;--bg:#fff;--soft:#fafafa}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.layout{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;width:220px;border-right:1px solid var(--line);padding:28px 14px;background:#fff;display:flex;flex-direction:column;z-index:4}
+.logo{font: bold 30px Georgia,serif;letter-spacing:-1px;margin:4px 12px 38px}
+.nav{display:flex;flex-direction:column;gap:7px}
+.nav button{border:0;background:transparent;display:flex;align-items:center;gap:15px;text-align:left;padding:13px 12px;border-radius:9px;font-size:15px;color:var(--text)}
+.nav button:hover{background:#f5f5f5}.nav .symbol{font-size:23px;width:25px;text-align:center}
+.main{margin-left:220px;padding:34px 36px 70px;max-width:1400px}
+.profile-head{max-width:935px;margin:0 auto 35px;display:grid;grid-template-columns: minmax(110px, 1fr) 2fr;gap:30px;align-items:center;padding:0 20px 25px;border-bottom:1px solid var(--line)}
+.profile-pic{width:150px;height:150px;border-radius:50%;margin:auto;background:linear-gradient(135deg,#feda75,#d62976,#4f5bd5);padding:5px}
+.profile-pic div{height:100%;border:4px solid white;border-radius:50%;background:#f5f5f5;display:grid;place-items:center;font-size:52px}
+.profile-details{min-width:0}
+.profile-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.profile-top h1{font-size:21px;font-weight:400;margin:0 6px 0 0}
+.pill{border:1px solid var(--line);background:#f7f7f7;border-radius:8px;padding:8px 13px;font-weight:650}
+.profile-stats{display:flex;gap:34px;margin-bottom:17px}.profile-stats strong{font-weight:700}
+.bio{line-height:1.6}.bio strong{display:block}
+.tabs{display:flex;justify-content:center;gap:55px;border-top:0;margin:0 auto 18px;max-width:935px}
+.tab{border:0;background:transparent;color:var(--muted);padding:15px 0;letter-spacing:1px;font-size:12px;display:flex;gap:7px;align-items:center}
+.tab.active{border-top:1px solid #262626;margin-top:-1px;color:var(--text);font-weight:700}
+.gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;max-width:935px;margin:0 auto}
+.tile{position:relative;aspect-ratio:1/1;overflow:hidden;background:#f0f0f0;cursor:pointer}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+.tile:hover img{transform:scale(1.025)}
+.tile-overlay{position:absolute;inset:0;background:#0005;color:white;display:flex;align-items:center;justify-content:center;gap:22px;opacity:0;transition:opacity .2s;font-weight:700}
+.tile:hover .tile-overlay{opacity:1}
+.empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted)}
+.empty .big{font-size:45px;color:var(--text);margin-bottom:12px}
+.modal-backdrop{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
+.modal-backdrop.open{display:flex}
+.modal{background:#fff;width:min(520px,100%);border-radius:14px;overflow:hidden;box-shadow:0 12px 50px #0003}
+.modal-head{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-weight:700}
+.close{border:0;background:none;font-size:24px}
+.modal-body{padding:20px}
+.dropzone{border:1px dashed #bdbdbd;border-radius:12px;min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;gap:12px;background:#fafafa}
+.dropzone .upload-icon{font-size:42px}
+textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:11px 12px;outline:none}
+textarea{resize:vertical;min-height:82px;margin-top:14px}
+.primary{border:0;border-radius:8px;background:var(--blue);color:white;font-weight:700;padding:10px 15px}
+.primary:disabled{opacity:.55;cursor:not-allowed}
+.small-muted{font-size:12px;color:var(--muted);line-height:1.5}
+.form-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+.form-row>*{flex:1}
+.status{margin-top:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.status.error{color:#c62828}.status.ok{color:#16803c}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#262626;color:white;padding:11px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.toast.show{opacity:1}
+footer{max-width:935px;margin:30px auto 0;text-align:center;color:#b4b4b4;font-size:11px;line-height:1.8}
+@media(max-width:850px){.sidebar{width:72px;padding:25px 8px}.logo{font-size:0;text-align:center;margin:4px 0 35px}.logo:after{content:"◎";font:30px Arial}.nav button{justify-content:center;padding:12px}.nav .label{display:none}.main{margin-left:72px;padding:25px 20px 60px}.profile-head{gap:18px;padding:0 5px 22px}.profile-pic{width:115px;height:115px}.profile-stats{gap:18px}}
+@media(max-width:560px){.sidebar{display:none}.main{margin:0;padding:20px 0 40px}.profile-head{grid-template-columns:85px 1fr;gap:16px;padding:0 14px 20px;margin-bottom:22px}.profile-pic{width:78px;height:78px;padding:3px}.profile-pic div{font-size:29px;border-width:2px}.profile-top{gap:8px;margin-bottom:12px}.profile-top h1{font-size:18px;width:100%}.pill{padding:6px 9px;font-size:12px}.profile-stats{justify-content:space-between;gap:6px;font-size:12px;margin-bottom:10px}.bio{font-size:12px}.tabs{gap:0;justify-content:space-around}.tab{font-size:11px}.gallery{gap:2px}.modal-body{padding:15px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="logo">Instagram</div>
+  <nav class="nav">
+    <button id="homeBtn"><span class="symbol">⌂</span><span class="label">Home</span></button>
+    <button id="searchBtn"><span class="symbol">⌕</span><span class="label">Search</span></button>
+    <button id="exploreBtn"><span class="symbol">▦</span><span class="label">Explore</span></button>
+    <button id="uploadNav"><span class="symbol">⊞</span><span class="label">Create post</span></button>
+  </nav>
+</aside>
+
+<main class="main">
+  <section class="profile-head">
+    <div class="profile-pic"><div>📷</div></div>
+    <div class="profile-details">
+      <div class="profile-top"><h1 id="profileName">your_gallery</h1><button class="pill" id="editProfile">Edit profile</button></div>
+      <div class="profile-stats"><span><strong id="postCount">0</strong> posts</span><span><strong>—</strong> followers</span><span><strong>—</strong> following</span></div>
+      <div class="bio"><strong>Photo diary</strong> Little moments, collected here ✨<br><span class="small-muted">Upload photos to this public three-column gallery.</span></div>
+    </div>
+  </section>
+
+
+  <div class="tabs"><button class="tab active" id="postsTab">▦ POSTS</button><button class="tab" id="savedTab">♧ SAVED</button></div>
+  <section class="gallery" id="gallery" aria-label="Photo grid">
+    <div class="empty"><div class="big">▧</div><strong>Loading photos…</strong></div>
+  </section>
+  <footer>ABOUT · HELP · PRIVACY · TERMS<br>© 2026 SOCIAL GALLERY DEMO</footer>
+</main>
+</div>
+
+<div class="modal-backdrop" id="uploadModal">
+  <div class="modal">
+    <div class="modal-head"><span>Create new post</span><button class="close" id="closeModal" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div class="dropzone" id="dropzone"><div class="upload-icon">▧</div><strong>Drag photos here</strong><span class="small-muted">or choose an image from your device</span><label class="pill" for="fileInput">Select from computer</label><input type="file" id="fileInput" accept="image/*" hidden></div>
+      <div id="previewWrap" hidden style="margin-top:12px"><img id="preview" alt="Selected photo preview" style="display:block;max-width:100%;max-height:280px;margin:auto;object-fit:contain"></div>
+      <textarea id="caption" placeholder="Write a caption… (optional)" maxlength="2200"></textarea>
+      <div class="form-row"><button class="pill" id="cancelUpload">Cancel</button><button class="primary" id="publishBtn" disabled>Share</button></div>
+      <div class="status" id="uploadStatus"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<!-- Replace these two values with your Supabase project URL and publishable/anon key. Never use a service_role key here. -->
+<script>
+const SUPABASE_URL = "https://nuzigytcmwqwjzufosxo.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_QCQN5gFX7HnDBSPWe1TsRQ_4GJmzVrJ";
+const BUCKET = "gallery-photos";
+const TABLE = "gallery_posts";
+
+let supabaseClient = null;
+let selectedFile = null;
+let savedView = false;
+const $ = id => document.getElementById(id);
+const gallery = $("gallery");
+
+function notify(message){const t=$("toast");t.textContent=message;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2400)}
+function status(id,message,type=""){const el=$(id);el.textContent=message;el.className="status "+type}
+function configured(){return SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_SUPABASE") && SUPABASE_ANON_KEY.length>20 && !SUPABASE_ANON_KEY.includes("YOUR_SUPABASE")}
+function setAuthUI(){ $("profileName").textContent="your_gallery"; }
+function showEmpty(title,subtitle){gallery.innerHTML=`<div class="empty"><div class="big">▧</div><strong>${title}</strong><p>${subtitle||""}</p></div>`}
+function openUpload(){$("uploadModal").classList.add("open")}
+function closeUpload(){$("uploadModal").classList.remove("open");selectedFile=null;$("fileInput").value="";$("previewWrap").hidden=true;$("preview").removeAttribute("src");$("caption").value="";$("publishBtn").disabled=true;status("uploadStatus","")}
+function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+async function loadPosts(){
+  if(!supabaseClient){showEmpty("Connect Supabase first","Add your project URL and anon key in this HTML file, then reload.");return}
+  gallery.innerHTML='<div class="empty"><strong>Loading photos…</strong></div>';
+  let query=supabaseClient.from(TABLE).select("id,user_id,image_url,caption,created_at").order("created_at",{ascending:false});
+  if(savedView){showEmpty("Saved posts are not configured","This starter gallery currently shows uploaded posts.");return}
+  const {data,error}=await query;
+  if(error){showEmpty("Could not load photos",error.message+" — check that you ran the setup SQL.");return}
+  $("postCount").textContent=data.length;
+  if(!data.length){showEmpty("No posts yet","Select “Create post” to upload your first photo.");return}
+  gallery.innerHTML="";
+  data.forEach(post=>{
+    const tile=document.createElement("article");tile.className="tile";
+    const img=document.createElement("img");img.src=post.image_url;img.alt=post.caption||"Uploaded photo";img.loading="lazy";
+    const overlay=document.createElement("div");overlay.className="tile-overlay";overlay.innerHTML=`<span>♥ ${Math.max(0,Math.floor((post.caption||"").length/3)+1)}</span><span>▢ ${escapeHtml(post.caption?"1":"0")}</span>`;
+    tile.append(img,overlay);
+    tile.addEventListener("click",()=>showPost(post));
+    gallery.append(tile);
+  });
+}
+function showPost(post){
+  const backdrop=document.createElement("div");backdrop.className="modal-backdrop open";
+  const card=document.createElement("div");card.className="modal";card.style.maxWidth="700px";
+  const head=document.createElement("div");head.className="modal-head";
+  const title=document.createElement("span");title.textContent="Post";
+  const close=document.createElement("button");close.className="close";close.textContent="×";close.onclick=()=>backdrop.remove();head.append(title,close);
+  const body=document.createElement("div");body.className="modal-body";
+  const img=document.createElement("img");img.src=post.image_url;img.alt=post.caption||"Post image";img.style.cssText="display:block;max-width:100%;max-height:65vh;margin:auto;object-fit:contain";
+  const cap=document.createElement("p");cap.textContent=post.caption||"";cap.style.whiteSpace="pre-wrap";
+  body.append(img,cap);
+  
+  card.append(head,body);backdrop.append(card);backdrop.addEventListener("click",e=>{if(e.target===backdrop)backdrop.remove()});document.body.append(backdrop);
+}
+async function deletePost(post,modal){
+  if(!confirm("Delete this photo?"))return;
+  const {error}=await supabaseClient.from(TABLE).delete().eq("id",post.id);
+  if(error){notify("Delete failed: "+error.message);return}
+  // Storage cleanup is handled by the storage policy/setup instructions; the record disappears immediately.
+  modal.remove();notify("Post deleted");loadPosts();
+}
+async function uploadPost(){
+  if(!selectedFile||!supabaseClient)return;
+  if(!selectedFile.type.startsWith("image/")){status("uploadStatus","Please choose an image file.","error");return}
+  if(selectedFile.size>10*1024*1024){status("uploadStatus","Image must be smaller than 10 MB.","error");return}
+  $("publishBtn").disabled=true;status("uploadStatus","Uploading image…");
+  const ext=(selectedFile.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+  const path=`public/${crypto.randomUUID()}.${ext}`;
+  const {error:storageError}=await supabaseClient.storage.from(BUCKET).upload(path,selectedFile,{contentType:selectedFile.type,upsert:false});
+  if(storageError){status("uploadStatus","Image upload failed: "+storageError.message,"error");$("publishBtn").disabled=false;return}
+  const {data:urlData}=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
+  status("uploadStatus","Saving post…");
+  const {error:dbError}=await supabaseClient.from(TABLE).insert({user_id:null,image_url:urlData.publicUrl,storage_path:path,caption:$("caption").value.trim()});
+  if(dbError){
+    await supabaseClient.storage.from(BUCKET).remove([path]);
+    status("uploadStatus","Could not save post: "+dbError.message,"error");$("publishBtn").disabled=false;return
+  }
+  closeUpload();notify("Photo uploaded");savedView=false;$("postsTab").classList.add("active");$("savedTab").classList.remove("active");await loadPosts();
+}
+function selectFile(file){
+  if(!file)return;
+  if(!file.type.startsWith("image/")){status("uploadStatus","Choose an image file.","error");return}
+  selectedFile=file;$("preview").src=URL.createObjectURL(file);$("previewWrap").hidden=false;$("publishBtn").disabled=false;status("uploadStatus",file.name+" selected.");
+}
+
+$("uploadNav").addEventListener("click",openUpload);
+$("closeModal").addEventListener("click",closeUpload);$("cancelUpload").addEventListener("click",closeUpload);
+$("uploadModal").addEventListener("click",e=>{if(e.target===$("uploadModal"))closeUpload()});
+$("fileInput").addEventListener("change",e=>selectFile(e.target.files[0]));
+$("publishBtn").addEventListener("click",uploadPost);
+$("editProfile").addEventListener("click",()=>notify("Profile editing is not connected in this version"));
+$("homeBtn").addEventListener("click",()=>{savedView=false;loadPosts()});
+$("searchBtn").addEventListener("click",()=>notify("Search is not connected in this version"));
+$("exploreBtn").addEventListener("click",()=>{savedView=false;loadPosts()});
+$("postsTab").addEventListener("click",()=>{savedView=false;$("postsTab").classList.add("active");$("savedTab").classList.remove("active");loadPosts()});
+$("savedTab").addEventListener("click",()=>{savedView=true;$("savedTab").classList.add("active");$("postsTab").classList.remove("active");loadPosts()});
+const dz=$("dropzone");
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.style.background="#eef7ff"});
+dz.addEventListener("dragleave",()=>dz.style.background="#fafafa");
+dz.addEventListener("drop",e=>{e.preventDefault();dz.style.background="#fafafa";selectFile(e.dataTransfer.files[0])});
+
+async function init(){
+  if(!configured()){setAuthUI(null);showEmpty("Connect Supabase first","Paste your Supabase Project URL and publishable/anon key into the two constants in this HTML file.");return}
+  try{
+    const {createClient}=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+    supabaseClient=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    setAuthUI();
+    await loadPosts();
+  }catch(e){showEmpty("Supabase could not start",e.message)}
+}
+init();
+</script>
+</body>
+</html>
